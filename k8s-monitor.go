@@ -48,17 +48,17 @@ func main() {
 	for {
 		switch *resourceType {
 		case "pods", "pod":
-			listPods(clientset, ctx, *namespace)
+			listPods(ctx, clientset, *namespace)
 		case "deployments", "deployment":
-			listDeployments(clientset, ctx, *namespace)
+			listDeployments(ctx, clientset, *namespace)
 		case "services", "service":
-			listServices(clientset, ctx, *namespace)
+			listServices(ctx, clientset, *namespace)
 		case "configmaps", "configmap":
-			listConfigMaps(clientset, ctx, *namespace)
+			listConfigMaps(ctx, clientset, *namespace)
 		case "secrets", "secret":
-			listSecrets(clientset, ctx, *namespace)
+			listSecrets(ctx, clientset, *namespace)
 		case "nodes", "node":
-			listNodes(clientset, ctx)
+			listNodes(ctx, clientset)
 		default:
 			fmt.Printf("Unsupported resource type: %s\n", *resourceType)
 			os.Exit(1)
@@ -72,13 +72,13 @@ func main() {
 		// Clear the screen for watch mode
 		fmt.Print("\033[H\033[2J")
 		fmt.Printf("Watching %s in namespace %s (Ctrl+C to exit)...\n", *resourceType, *namespace)
-		
+
 		// Sleep for the specified interval
 		time.Sleep(time.Duration(*interval) * time.Second)
 	}
 }
 
-func listPods(clientset *kubernetes.Clientset, ctx context.Context, namespace string) {
+func listPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string) {
 	pods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		handleError(err)
@@ -90,19 +90,19 @@ func listPods(clientset *kubernetes.Clientset, ctx context.Context, namespace st
 		containerReady := fmt.Sprintf("%d/%d", getReadyContainers(pod.Status.ContainerStatuses), len(pod.Spec.Containers))
 		age := formatAge(pod.CreationTimestamp.Time)
 		restarts := getTotalRestarts(pod.Status.ContainerStatuses)
-		
-		fmt.Printf("%-40s %-20s %-15s %-10d %-10s\n", 
-			pod.Name, 
-			string(pod.Status.Phase), 
+
+		fmt.Printf("%-40s %-20s %-15s %-10d %-10s\n",
+			pod.Name,
+			string(pod.Status.Phase),
 			containerReady,
 			restarts,
 			age)
 	}
-	
+
 	fmt.Printf("\nTotal pods: %d\n", len(pods.Items))
 }
 
-func listDeployments(clientset *kubernetes.Clientset, ctx context.Context, namespace string) {
+func listDeployments(ctx context.Context, clientset *kubernetes.Clientset, namespace string) {
 	deployments, err := clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		handleError(err)
@@ -113,19 +113,19 @@ func listDeployments(clientset *kubernetes.Clientset, ctx context.Context, names
 	for _, deployment := range deployments.Items {
 		ready := fmt.Sprintf("%d/%d", deployment.Status.ReadyReplicas, *deployment.Spec.Replicas)
 		age := formatAge(deployment.CreationTimestamp.Time)
-		
-		fmt.Printf("%-40s %-10s %-10d %-10d %-10s\n", 
-			deployment.Name, 
-			ready, 
-			deployment.Status.UpdatedReplicas, 
-			deployment.Status.AvailableReplicas, 
+
+		fmt.Printf("%-40s %-10s %-10d %-10d %-10s\n",
+			deployment.Name,
+			ready,
+			deployment.Status.UpdatedReplicas,
+			deployment.Status.AvailableReplicas,
 			age)
 	}
-	
+
 	fmt.Printf("\nTotal deployments: %d\n", len(deployments.Items))
 }
 
-func listServices(clientset *kubernetes.Clientset, ctx context.Context, namespace string) {
+func listServices(ctx context.Context, clientset *kubernetes.Clientset, namespace string) {
 	services, err := clientset.CoreV1().Services(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		handleError(err)
@@ -141,21 +141,21 @@ func listServices(clientset *kubernetes.Clientset, ctx context.Context, namespac
 				externalIP = svc.Status.LoadBalancer.Ingress[0].Hostname
 			}
 		}
-		
+
 		age := formatAge(svc.CreationTimestamp.Time)
-		
-		fmt.Printf("%-40s %-20s %-20s %-15s %-10s\n", 
-			svc.Name, 
-			string(svc.Spec.Type), 
-			svc.Spec.ClusterIP, 
-			externalIP, 
+
+		fmt.Printf("%-40s %-20s %-20s %-15s %-10s\n",
+			svc.Name,
+			string(svc.Spec.Type),
+			svc.Spec.ClusterIP,
+			externalIP,
 			age)
 	}
-	
+
 	fmt.Printf("\nTotal services: %d\n", len(services.Items))
 }
 
-func listConfigMaps(clientset *kubernetes.Clientset, ctx context.Context, namespace string) {
+func listConfigMaps(ctx context.Context, clientset *kubernetes.Clientset, namespace string) {
 	configMaps, err := clientset.CoreV1().ConfigMaps(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		handleError(err)
@@ -165,17 +165,17 @@ func listConfigMaps(clientset *kubernetes.Clientset, ctx context.Context, namesp
 	fmt.Printf("\n%-40s %-15s %-10s\n", "NAME", "DATA", "AGE")
 	for _, cm := range configMaps.Items {
 		age := formatAge(cm.CreationTimestamp.Time)
-		
-		fmt.Printf("%-40s %-15d %-10s\n", 
-			cm.Name, 
-			len(cm.Data), 
+
+		fmt.Printf("%-40s %-15d %-10s\n",
+			cm.Name,
+			len(cm.Data),
 			age)
 	}
-	
+
 	fmt.Printf("\nTotal configmaps: %d\n", len(configMaps.Items))
 }
 
-func listSecrets(clientset *kubernetes.Clientset, ctx context.Context, namespace string) {
+func listSecrets(ctx context.Context, clientset *kubernetes.Clientset, namespace string) {
 	secrets, err := clientset.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		handleError(err)
@@ -185,18 +185,18 @@ func listSecrets(clientset *kubernetes.Clientset, ctx context.Context, namespace
 	fmt.Printf("\n%-40s %-15s %-15s %-10s\n", "NAME", "TYPE", "DATA", "AGE")
 	for _, secret := range secrets.Items {
 		age := formatAge(secret.CreationTimestamp.Time)
-		
-		fmt.Printf("%-40s %-15s %-15d %-10s\n", 
-			secret.Name, 
-			string(secret.Type), 
-			len(secret.Data), 
+
+		fmt.Printf("%-40s %-15s %-15d %-10s\n",
+			secret.Name,
+			string(secret.Type),
+			len(secret.Data),
 			age)
 	}
-	
+
 	fmt.Printf("\nTotal secrets: %d\n", len(secrets.Items))
 }
 
-func listNodes(clientset *kubernetes.Clientset, ctx context.Context) {
+func listNodes(ctx context.Context, clientset *kubernetes.Clientset) {
 	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		handleError(err)
@@ -214,7 +214,7 @@ func listNodes(clientset *kubernetes.Clientset, ctx context.Context) {
 				break
 			}
 		}
-		
+
 		roles := "<none>"
 		if val, ok := node.Labels["kubernetes.io/role"]; ok {
 			roles = val
@@ -223,18 +223,18 @@ func listNodes(clientset *kubernetes.Clientset, ctx context.Context) {
 		} else if val, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok && val == "true" {
 			roles = "control-plane"
 		}
-		
+
 		version := node.Status.NodeInfo.KubeletVersion
 		age := formatAge(node.CreationTimestamp.Time)
-		
-		fmt.Printf("%-40s %-15s %-15s %-20s %-10s\n", 
-			node.Name, 
-			status, 
-			roles, 
-			version, 
+
+		fmt.Printf("%-40s %-15s %-15s %-20s %-10s\n",
+			node.Name,
+			status,
+			roles,
+			version,
 			age)
 	}
-	
+
 	fmt.Printf("\nTotal nodes: %d\n", len(nodes.Items))
 }
 

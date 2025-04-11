@@ -55,6 +55,24 @@ go build -o k8s-monitor
 - Kubernetes cluster access
 - Valid kubeconfig file
 
+## Testing Locally
+
+You can test this monitor locally using [Kind](https://kind.sigs.k8s.io/), a tool for running local Kubernetes clusters using Docker containers:
+
+```bash
+# Install Kind
+# On Linux:
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+chmod +x ./kind
+sudo mv ./kind /usr/local/bin/
+
+# Create a cluster
+kind create cluster --name test-cluster
+
+# Use k8s-monitor with the local cluster
+./k8s-monitor --resource pods
+```
+
 ## License
 
 MIT
